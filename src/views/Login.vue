@@ -5,7 +5,6 @@
     <el-card class="login-card">
       <h2 class="login-title">欢迎使用Blue便签</h2>
       <h2 class="login-title">示例用户名和密码:riverk</h2>
-       
     <el-form :model="loginForm" :rules="loginRules" ref="loginForm"  @submit.native.prevent="login">
       <el-form-item label="用户名" prop="username">
         <el-input v-model="loginForm.username" placeholder="请输入用户名"></el-input>
@@ -15,12 +14,28 @@
       </el-form-item>
       <el-form-item class="login-button">
         <el-button type="primary" native-type="submit">登录</el-button>
+        <el-button type="info" @click="showRegisterDialog = true">注册</el-button>
         <!-- <el-button plain @click="open2" type="primary" >点我获取示例用户名和密码</el-button> -->
       </el-form-item>
     </el-form>
     <el-dialog title="登录失败" :visible="showErrorMessage" @close="showErrorMessage = false" custom-class="custom-dialog">
       <p>请检查用户名和密码是否正确。</p>
     </el-dialog>
+    <el-dialog title="注册新用户" :visible.sync="showRegisterDialog">
+  <el-form :model="registerForm" :rules="registerRules" ref="registerForm">
+    <!-- 注册表单内容，例如用户名、密码等 -->
+    <el-form-item label="用户名" prop="username">
+      <el-input v-model="registerForm.username" placeholder="设置用户名"></el-input>
+    </el-form-item>
+    <el-form-item label="密码" prop="password">
+      <el-input type="password" v-model="registerForm.password" placeholder="设置密码"></el-input>
+    </el-form-item>
+    <!-- ......可能还有其他字段比如邮箱、确认密码等 -->
+    <el-form-item>
+      <el-button type="primary" @click="register">注册</el-button>
+    </el-form-item>
+  </el-form>
+</el-dialog>
   </el-card>
   </div>
   <el-footer>riverk</el-footer>
@@ -44,7 +59,23 @@ export default {
           { required: true, message: '请输入密码', trigger: 'blur' }
         ]
       },
-      showErrorMessage: false,
+       // 新增注册表单数据
+    registerForm: {
+      username: '',
+      password: ''
+    },
+    // 新增注册表单验证规则
+    registerRules: {
+      username: [
+        { required: true, message: '请输入用户名', trigger: 'blur' }
+      ],
+      password: [
+        { required: true, message: '请输入密码', trigger: 'blur' }
+      ]
+    },
+    // 控制注册对话框显示的状态
+    showRegisterDialog: false,
+    showErrorMessage: false,
     };
   },
   methods: {
@@ -88,6 +119,32 @@ export default {
         window.console.error(error);
       }
     },
+
+    // 新添加的注册方法
+  async register() {
+    try {
+      await this.$refs.registerForm.validate();
+      const response = await fetch('/signup', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ 
+          username: this.registerForm.username,
+          password: this.registerForm.password
+        }),
+      });
+      if (response.ok) {
+        // 注册成功后的逻辑，比如提示用户注册成功，关闭注册对话框等
+        this.showRegisterDialog = false;
+        this.$message.success('注册成功，请登录。');
+      } else {
+        // 注册失败的逻辑，比如显示错误信息
+        this.$message.error('注册失败，请检查输入或重试。');
+      }
+    } catch (error) {
+      this.$message.error('注册失败，请检查输入或重试。');
+      window.console.error(error);
+    }
+  }
   },
 
 };
@@ -133,7 +190,8 @@ export default {
 }
 
 .login-button {
-   margin-left: 44%;
+   display: flex;
+   justify-content: center;
 }
 
 .el-dialog {

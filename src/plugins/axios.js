@@ -3,24 +3,29 @@
 import Vue from 'vue';
 import axios from "axios";
 import router from '@/router';
+import jwt_decode from 'jwt-decode';
 
-
-// Full config:  https://github.com/axios/axios#request-config
-// axios.defaults.baseURL = process.env.baseURL || process.env.apiUrl || '';
-// axios.defaults.headers.common['Authorization'] = AUTH_TOKEN;
-// axios.defaults.headers.post['Content-Type'] = 'application/x-www-form-urlencoded';
-
-let config = {
-  // baseURL: process.env.baseURL || process.env.apiUrl || ""
-  // timeout: 60 * 1000, // Timeout
-  // withCredentials: true, // Check cross-site Access-Control
-};
+let config = {};
 
 const _axios = axios.create(config);
 
+// 请求拦截器
 _axios.interceptors.request.use(
   function(config) {
     // Do something before request is sent
+    const token = localStorage.getItem('token');
+    if (token) {
+      const decodedToken = jwt_decode(token);
+      const current_time = Date.now() / 1000;
+      if (decodedToken.exp < current_time) {
+        // Token已过期
+        localStorage.removeItem('token'); // 清理localStorage中的token
+        router.push('/login'); // 重定向到登录界面
+        return Promise.reject("Token expired.");
+      } else {
+        config.headers.token = `${token}`; // 设置请求头的授权字段
+      }
+    }
     return config;
   },
   function(error) {
@@ -29,25 +34,19 @@ _axios.interceptors.request.use(
   }
 );
 
-// Add a response interceptor
-_axios.interceptors.response.use(
-  function(response) {
-    // Do something with response data
-    if (response.data.code === 205 && response.data.msg === '无效的Token') {
-      // 弹出提示框
-      alert('登录失效，请重新登录');
-
-      // 注销用户并跳转到登录页面
+// 响应拦截器
+_axios.interceptors.response.use(response => {
+  // 请求成功时直接返回响应内容
+  return response;
+}, error => {
+  if (error.response && error.response.status === 401) {
+      // 如果响应的状态码是 401，可能是因为token无效或未提供token
       localStorage.removeItem('token');
-      router.push('/login');
-    }
-    return response;
-  },
-  function(error) {
-    // Do something with response error
-    return Promise.reject(error);
+      router.replace({ path: '/login' });
   }
-);
+  // 请求错误时做些事情
+  return Promise.reject(error);
+});
 
 Plugin.install = function(Vue) {
   Vue.axios = _axios;
