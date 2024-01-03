@@ -5,12 +5,10 @@ Vue.use(Vuex);
 
 export default new Vuex.Store({
   state: {
-    token: localStorage.getItem('token') || '',
+    uid: '',
+    username: '',
   },
   mutations: {
-    setToken (state, token) {
-      state.token = token;
-    },
     setUID(state, uid) {
       state.uid = uid;
     },

@@ -50,7 +50,8 @@
 
 <script>
 import Vue from 'vue';
-import jwt_decode from "jwt-decode";
+import { mapState } from "vuex";
+// import jwt_decode from "jwt-decode";
 import TodoList from "@/components/TodoList.vue";
 import { Notification } from 'element-ui';
 import 'element-ui/lib/theme-chalk/index.css';
@@ -62,51 +63,29 @@ export default {
   },
   data() {
     return {
-      username: "",
-      uid: "",
       logoutConfirmVisible: false,
     };
   },
-  created() {
-  const token = localStorage.getItem("token");    
-  if (token) {
-    const decodedToken = jwt_decode(token);
-    const current_time = Date.now() / 1000; // 获取当前时间的时间戳，并转换为秒
-
-    if (decodedToken.exp < current_time) {
-      // Token 已过期
-      // 使用Element UI的Notification显示消息
-      this.$notify({
-        title: '会话过期',
-        message: '会话已过期，请重新登录。',
-        type: 'warning', // 通知类型为警告
-        duration: 9000, // 显示持续时间，这里设置了5秒
-        onClose: () => {
-          this.$router.push('/login'); // 在Notification关闭时重定向到登录页面
-        }
-      });
-    } else {
-      // Token 仍然有效
-      this.username = decodedToken.username;
-      this.uid = decodedToken.uid;
-    }
-  }
-},
+  computed: {
+    ...mapState(['uid', 'username'])
+  },
   methods: {
     showLogoutConfirm() {
       this.logoutConfirmVisible = true;
     },
+    cancelLogout() {
+      this.logoutConfirmVisible = false;
+    },
+
     logout() {
   this.axios.post('/v1/signout')
     .then(() => {
       // 注销成功
-      this.clearSession(); // 清理session数据
       this.$router.push("/login"); // 重定向到登录页面
     })
     .catch(error => {
       // 注销失败，处理错误
       window.console.error('注销请求有问题:', error);
-
       // 使用Element UI的Notification显示错误
       this.$notify({
         title: '注销失败',
@@ -116,18 +95,7 @@ export default {
       });
     });
 },
-clearSession() {
-  // 清除Vuex和localStorage中的数据
-  this.$store.commit("setToken", "");
-  localStorage.removeItem("token");
-  this.$store.commit("setUID");
-  localStorage.removeItem("uid");
-  this.$store.commit("setuername");
-  localStorage.removeItem("username");
-},
-    cancelLogout() {
-      this.logoutConfirmVisible = false;
-    },
+
   },
 };
 </script>

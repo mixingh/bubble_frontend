@@ -43,7 +43,7 @@
 </template>
 
 <script>
-import jwt_decode from 'jwt-decode';
+//import jwt_decode from 'jwt-decode';
 export default {
   data() {
     return {
@@ -80,71 +80,55 @@ export default {
   },
   methods: {
     async login() {
-      try {
-        await this.$refs.loginForm.validate();
-        const response = await fetch('/login', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ username: this.loginForm.username, password: this.loginForm.password }),
-        });
-        if (response.ok) {
-          const data = await response.json();
-          //window.console.log(data.data.username);
-        const token = data.token;
-        // 存储 token 到 Vuex 和 localStorage 中
-        this.$store.commit('setToken', token);
-        localStorage.setItem('token', token);
-
-        // 解码 token 获取 username 和 uid 字段
-          const decodedToken = jwt_decode(token);
-          const username = decodedToken.username;
-          const uid = decodedToken.uid;
-          // window.console.log(data.data.username);
-          // window.console.log(uid);
-          //存储 usrname uid 到 Vuex 和 localStorage 中 
-          this.$store.commit('setUID', uid);
-          localStorage.setItem('uid', uid);
-         
-          this.$store.commit('setUsername', username);
-          localStorage.setItem('username', username);
-
-        // 跳转到对应的页面
-        this.$router.push({name:'index',params:{username,uid}});          
-        } else {
-          this.showErrorMessage  = '账号密码错误';
-        
-        }
-      } catch (error) {
-        this.showErrorMessage  = '账号密码错误';
-        window.console.error(error);
-      }
-    },
+  try {
+    await this.$refs.loginForm.validate();
+    const response = await fetch('/login', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include', // 添加这一行来发送Cookie
+      body: JSON.stringify({ username: this.loginForm.username, password: this.loginForm.password }),
+    });
+    if (response.ok) {
+      // 登录成功，跳转到首页
+      this.$router.push('/index');          
+    } else {
+      this.showErrorMessage  = '账号密码错误';
+    }
+  } catch (error) {
+    this.showErrorMessage  = '账号密码错误';
+    window.console.error(error);
+  }
+},
 
     // 新添加的注册方法
-  async register() {
-    try {
-      await this.$refs.registerForm.validate();
-      const response = await fetch('/signup', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ 
-          username: this.registerForm.username,
-          password: this.registerForm.password
-        }),
-      });
-      if (response.ok) {
-        // 注册成功后的逻辑，比如提示用户注册成功，关闭注册对话框等
-        this.showRegisterDialog = false;
-        this.$message.success('注册成功，请登录。');
-      } else {
-        // 注册失败的逻辑，比如显示错误信息
-        this.$message.error('注册失败，请检查输入或重试。');
-      }
-    } catch (error) {
+    async register() {
+  try {
+    await this.$refs.registerForm.validate();
+    const response = await fetch('/signup', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ 
+        username: this.registerForm.username,
+        password: this.registerForm.password
+      }),
+    });
+
+    if (response.ok) {
+      const data = await response.json();
+      this.username = data.username;
+      this.userId = data.userId;
+      this.showRegisterDialog = false;
+      this.$message.success('注册成功，请登录。');
+    } else {
       this.$message.error('注册失败，请检查输入或重试。');
-      window.console.error(error);
     }
+  } catch (error) {
+    this.$message.error('注册失败，请检查输入或重试。');
+    window.console.error(error);
   }
+},
+
+
   },
 
 };

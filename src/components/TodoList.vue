@@ -87,6 +87,7 @@
 
 <script>
 import moment from 'moment';
+import { mapState } from "vuex";
 export default {
   name: "TodoList",
   data() {
@@ -109,6 +110,9 @@ export default {
   mounted() {
     this.getTodoList();
   },
+  computed: {
+  ...mapState(['uid'])
+},
   methods: {
     //编辑内容
     handleEditContent(_index, row) {
@@ -156,14 +160,8 @@ export default {
     },
     //根据UID获取待办事项内容
     getTodoList() {
-      const token = localStorage.getItem("token");
-      const uid = localStorage.getItem("uid");
       this.axios
-        .get("/v1/todo/" + uid, {
-          headers: {
-            token: `${token}`,
-          },
-        })
+        .get("/v1/todo/" + this.uid)
         .then((response) => {
           //window.console.log(response.data); // 输出完整的响应数据
           this.tableData = response.data;
@@ -175,17 +173,11 @@ export default {
     },
     handleEdit(index, row) {
       let messageSuffix = row.status ? " 置为未完成" : " 置为已完成";
-      const token = localStorage.getItem("token");
       this.axios
         .put(
           "/v1/todo/" + row.ID,
           {
             status: !row.status,
-          },
-          {
-            headers: {
-              token: `${token}`,
-            },
           }
         )
         .then(() => {
@@ -199,13 +191,8 @@ export default {
         });
     },
     handleDelete(index, ID) {
-      const token = localStorage.getItem("token");
       this.axios
-        .delete("/v1/todo/" + ID, {
-          headers: {
-            token: `${token}`,
-          },
-        })
+        .delete("/v1/todo/" + ID)
         .then(() => {
           this.tableData.splice(index, 1);
           this.$message({
@@ -217,20 +204,12 @@ export default {
         });
     },
     handleAdd() {
-      const uid = parseInt(localStorage.getItem("uid")); // 获取当前的uid并转换为整数
-      if (this.newTitle !== "" && !isNaN(uid)) {
-        // 检查 uid 是否为有效的数字
-        const token = localStorage.getItem("token");
+      if (this.newTitle !== "" && !isNaN(this.uid)) {
         this.axios
           .post(
             "/v1/todo/",
             {
               title: this.newTitle,
-            },
-            {
-              headers: {
-                token: `${token}`,
-              },
             }
           )
           .then(() => {
